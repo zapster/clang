@@ -81,6 +81,11 @@ cd _build
 	-DCLANG_PLUGIN_SUPPORT:BOOL=ON \
 	\
 	-DCLANG_BUILD_EXAMPLES:BOOL=OFF \
+%if 0%{?__isa_bits} == 64
+        -DLLVM_LIBDIR_SUFFIX=64 \
+%else
+        -DLLVM_LIBDIR_SUFFIX= \
+%endif
 	-DLIB_SUFFIX=
 
 make %{?_smp_mflags}
@@ -120,8 +125,8 @@ rm -vf %{buildroot}%{_datadir}/clang/clang-format-diff.py*
 %files devel
 %{_includedir}/clang/
 %{_includedir}/clang-c/
+%{_libdir}/cmake/
 %dir %{_datadir}/clang/
-%{_datadir}/clang/cmake/
 
 %files analyzer
 %{_bindir}/scan-view
