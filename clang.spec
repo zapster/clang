@@ -1,6 +1,6 @@
 Name:		clang
 Version:	3.8.0
-Release:	2%{?dist}
+Release:	3%{?dist}
 Summary:	A C language family front-end for LLVM
 
 License:	NCSA
@@ -39,6 +39,7 @@ as libraries and designed to be loosely-coupled and extensible.
 
 %package libs
 Summary: Runtime library for clang
+Requires: compiler-rt%{?_isa} >= %{version}
 
 %description libs
 Runtime library for clang.
@@ -137,6 +138,10 @@ rm -vf %{buildroot}%{_datadir}/clang/clang-format-diff.py*
 %{_mandir}/man1/scan-build.1.*
 
 %changelog
+* Mon Nov 14 2016 Nathaniel McCallum <npmccallum@redhat.com> - 3.8.0-3
+- Add Requires: compiler-rt to clang-libs.
+- Without this, compiling with certain CFLAGS breaks.
+
 * Fri Jul 01 2016 Stephan Bergmann <sbergman@redhat.com> - 3.8.0-2
 - Resolves: rhbz#1282645 add GCC abi_tag support
 
