@@ -1,6 +1,6 @@
 Name:		clang
-Version:	3.8.0
-Release:	3%{?dist}
+Version:	3.8.1
+Release:	1%{?dist}
 Summary:	A C language family front-end for LLVM
 
 License:	NCSA
@@ -17,6 +17,7 @@ BuildRequires:	llvm-devel = %{version}
 BuildRequires:	libxml2-devel
 BuildRequires:  llvm-static = %{version}
 BuildRequires:  perl-generators
+BuildRequires:  ncurses-devel
 
 Requires:	%{name}-libs%{?_isa} = %{version}-%{release}
 
@@ -138,6 +139,9 @@ rm -vf %{buildroot}%{_datadir}/clang/clang-format-diff.py*
 %{_mandir}/man1/scan-build.1.*
 
 %changelog
+* Tue Jan 17 2017 Michael Cronenworth <mike@cchtml.com> - 3.8.1-1
+- clang 3.8.1
+
 * Mon Nov 14 2016 Nathaniel McCallum <npmccallum@redhat.com> - 3.8.0-3
 - Add Requires: compiler-rt to clang-libs.
 - Without this, compiling with certain CFLAGS breaks.
