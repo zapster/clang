@@ -1,5 +1,5 @@
 Name:		clang
-Version:	3.8.1
+Version:	3.9.1
 Release:	1%{?dist}
 Summary:	A C language family front-end for LLVM
 
@@ -8,9 +8,6 @@ URL:		http://llvm.org
 Source0:	http://llvm.org/releases/%{version}/cfe-%{version}.src.tar.xz
 
 Source100:	clang-config.h
-
-Patch0:		0001-GCC-PR23529-Sema-part-of-attrbute-abi_tag-support.patch
-Patch1:		0002-GCC-PR23529-Mangler-part-of-attrbute-abi_tag-support.patch
 
 BuildRequires:	cmake
 BuildRequires:	llvm-devel = %{version}
@@ -69,8 +66,6 @@ intended to run in tandem with a build of a project or code base.
 
 %prep
 %setup -q -n cfe-%{version}.src
-%patch0 -p1
-%patch1 -p1
 %build
 mkdir -p _build
 cd _build
@@ -139,6 +134,9 @@ rm -vf %{buildroot}%{_datadir}/clang/clang-format-diff.py*
 %{_mandir}/man1/scan-build.1.*
 
 %changelog
+* Thu Mar 02 2017 Dave Airlie <airlied@redhat.com> - 3.9.1-1
+- clang 3.9.1
+
 * Tue Jan 17 2017 Michael Cronenworth <mike@cchtml.com> - 3.8.1-1
 - clang 3.8.1
 
