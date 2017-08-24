@@ -16,28 +16,57 @@
 	%{_bindir}/clang-cpp \
 	%{_bindir}/clang-format \
 	%{_bindir}/clang-import-test \
-	%{_bindir}/clang-offload-bundler
+	%{_bindir}/clang-offload-bundler \
+	%{_bindir}/git-clang-format
+
+%if 0%{?fedora}
+%bcond_without python3
+%else
+%bcond_with python3
+%endif
 
 Name:		clang
-Version:	4.0.0
-Release:	3%{?dist}
+Version:	4.0.1
+Release:	4%{?dist}
 Summary:	A C language family front-end for LLVM
 
 License:	NCSA
 URL:		http://llvm.org
 Source0:	http://llvm.org/releases/%{version}/cfe-%{version}.src.tar.xz
 Source1:	http://llvm.org/releases/%{version}/clang-tools-extra-%{version}.src.tar.xz
+Source2:	http://llvm.org/releases/%{version}/test-suite-%{version}.src.tar.xz
 
 Source100:	clang-config.h
 
-Patch0:		0001-CMake-Fix-pthread-handling-for-out-of-tree-builds.patch
+# This patch is required when the test suite is using python-lit 0.5.0.
+Patch1:		0001-litsupport-Add-compatibility-cludge-so-it-still-work.patch
+Patch2:		0001-docs-Fix-Sphinx-detection-with-out-of-tree-builds.patch
+Patch3:		0001-test-Remove-FileCheck-not-count-dependencies.patch
+Patch4:		0001-lit.cfg-Remove-substitutions-for-clang-llvm-tools.patch
 
 BuildRequires:	cmake
 BuildRequires:	llvm-devel = %{version}
 BuildRequires:	libxml2-devel
+# llvm-static is required, because clang-tablegen needs libLLVMTableGen, which
+# is not included in libLLVM.so.
 BuildRequires:  llvm-static = %{version}
 BuildRequires:  perl-generators
 BuildRequires:  ncurses-devel
+
+# These build dependencies are required for the test suite.
+%if %with python3
+BuildRequires:  python3-lit
+%else
+BuildRequires:  python2-lit
+%endif
+
+BuildRequires: zlib-devel
+BuildRequires: tcl
+BuildRequires: python-virtualenv
+BuildRequires: libstdc++-static
+BuildRequires: python3-sphinx
+
+
 Requires:	%{name}-libs%{?_isa} = %{version}-%{release}
 
 # clang requires gcc, clang++ requires libstdc++-devel
@@ -96,8 +125,14 @@ A set of extra tools built using Clang's tooling API.
 
 %prep
 %setup -T -q -b 1 -n clang-tools-extra-%{version}.src
-%patch0 -p1 -b .pthread-fix
+%patch3 -p1 -b .lit-dep-fix
+
+%setup -T -q -b 2 -n test-suite-%{version}.src
+%patch1 -p1 -b .lit-fix
+
 %setup -q -n cfe-%{version}.src
+%patch2 -p1 -b .docs-fix
+%patch4 -p1 -b .lit-tools-fix
 
 mv ../clang-tools-extra-%{version}.src tools/extra
 
@@ -117,6 +152,9 @@ cd _build
 	-DENABLE_LINKER_BUILD_ID:BOOL=ON \
 	-DLLVM_ENABLE_EH=ON \
 	-DLLVM_ENABLE_RTTI=ON \
+	-DLLVM_BUILD_DOCS=ON \
+	-DLLVM_ENABLE_SPHINX=ON \
+	-DSPHINX_WARNINGS_AS_ERRORS=OFF \
 	\
 	-DCLANG_BUILD_EXAMPLES:BOOL=OFF \
 %if 0%{?__isa_bits} == 64
@@ -136,8 +174,6 @@ make install DESTDIR=%{buildroot}
 mv -v %{buildroot}%{_includedir}/clang/Config/config{,-%{__isa_bits}}.h
 install -m 0644 %{SOURCE100} %{buildroot}%{_includedir}/clang/Config/config.h
 
-# remove git integration
-rm -vf %{buildroot}%{_bindir}/git-clang-format
 # remove editor integrations (bbedit, sublime, emacs, vim)
 rm -vf %{buildroot}%{_datadir}/clang/clang-format-bbedit.applescript
 rm -vf %{buildroot}%{_datadir}/clang/clang-format-sublime.py*
@@ -154,15 +190,29 @@ rm -vf %{buildroot}%{_datadir}/clang/clang-rename.py
 # remove diff reformatter
 rm -vf %{buildroot}%{_datadir}/clang/clang-format-diff.py*
 
+# TODO: Package html docs
+rm -Rvf %{buildroot}%{_pkgdocdir}
+
 %check
 # requires lit.py from LLVM utilities
-#cd _build
-#make check-all
+cd _build
+PATH=%{_libdir}/llvm:$PATH make check-clang
+
+mkdir -p %{_builddir}/test-suite-%{version}.src/_build
+cd %{_builddir}/test-suite-%{version}.src/_build
+
+# FIXME: Using the cmake macro adds -Werror=format-security to the C/CXX flags,
+# which causes the test suite to fail to build.
+cmake .. -DCMAKE_C_COMPILER=%{buildroot}/usr/bin/clang \
+         -DCMAKE_CXX_COMPILER=%{buildroot}/usr/bin/clang++
+make %{?_smp_mflags} check || :
+
 
 %files
 %{_libdir}/clang/
 %{clang_binaries}
 %{_bindir}/c-index-test
+%{_mandir}/man1/clang.1.gz
 
 %files libs
 %{_libdir}/*.so.*
@@ -171,7 +221,7 @@ rm -vf %{buildroot}%{_datadir}/clang/clang-format-diff.py*
 %files devel
 %{_includedir}/clang/
 %{_includedir}/clang-c/
-%{_libdir}/cmake/
+%{_libdir}/cmake/*
 %dir %{_datadir}/clang/
 
 %files analyzer
@@ -190,6 +240,33 @@ rm -vf %{buildroot}%{_datadir}/clang/clang-format-diff.py*
 %{_bindir}/modularize
 
 %changelog
+* Sun Aug 06 2017 Björn Esser <besser82@fedoraproject.org> - 4.0.1-4
+- Rebuilt for AutoReq cmake-filesystem
+
+* Wed Aug 02 2017 Fedora Release Engineering <releng@fedoraproject.org> - 4.0.1-3
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_27_Binutils_Mass_Rebuild
+
+* Wed Jul 26 2017 Fedora Release Engineering <releng@fedoraproject.org> - 4.0.1-2
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_27_Mass_Rebuild
+
+* Fri Jun 23 2017 Tom Stellard <tstellar@redhat.com> - 4.0.1-1
+- 4.0.1 Release.
+
+* Fri Jun 16 2017 Tom Stellard <tstellar@redhat.com> - 4.0.0-8
+- Enable make check-clang
+
+* Mon Jun 12 2017 Tom Stellard <tstellar@redhat.com> - 4.0.0-7
+- Package git-clang-format
+
+* Thu Jun 08 2017 Tom Stellard <tstellar@redhat.com> - 4.0.0-6
+- Generate man pages
+
+* Thu Jun 08 2017 Tom Stellard <tstellar@redhat.com> - 4.0.0-5
+- Ignore test-suite failures until all arches are fixed.
+
+* Mon Apr 03 2017 Tom Stellard <tstellar@redhat.com> - 4.0.0-4
+- Run llvm test-suite
+
 * Mon Mar 27 2017 Tom Stellard <tstellar@redhat.com> - 4.0.0-3
 - Enable eh/rtti, which are required by lldb.
 
