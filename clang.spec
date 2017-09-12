@@ -1,4 +1,9 @@
+%global maj_ver 5
+%global min_ver 0
+%global patch_ver 0
+
 %global clang_tools_binaries \
+	%{_bindir}/clangd \
 	%{_bindir}/clang-apply-replacements \
 	%{_bindir}/clang-change-namespace \
 	%{_bindir}/clang-include-fixer \
@@ -10,7 +15,7 @@
 %global clang_binaries \
 	%{_bindir}/clang \
 	%{_bindir}/clang++ \
-	%{_bindir}/clang-4.0 \
+	%{_bindir}/clang-%{maj_ver}.%{min_ver} \
 	%{_bindir}/clang-check \
 	%{_bindir}/clang-cl \
 	%{_bindir}/clang-cpp \
@@ -25,8 +30,8 @@
 %endif
 
 Name:		clang
-Version:	4.0.1
-Release:	7%{?dist}
+Version:	%{maj_ver}.%{min_ver}.%{patch_ver}
+Release:	1%{?dist}
 Summary:	A C language family front-end for LLVM
 
 License:	NCSA
@@ -37,10 +42,6 @@ Source2:	http://llvm.org/releases/%{version}/test-suite-%{version}.src.tar.xz
 
 Source100:	clang-config.h
 
-# This patch is required when the test suite is using python-lit 0.5.0.
-Patch1:		0001-litsupport-Add-compatibility-cludge-so-it-still-work.patch
-Patch2:		0001-docs-Fix-Sphinx-detection-with-out-of-tree-builds.patch
-Patch3:		0001-test-Remove-FileCheck-not-count-dependencies.patch
 Patch4:		0001-lit.cfg-Remove-substitutions-for-clang-llvm-tools.patch
 
 BuildRequires:	cmake
@@ -95,6 +96,8 @@ Runtime library for clang.
 %package devel
 Summary: Development header files for clang.
 Requires: %{name}%{?_isa} = %{version}-%{release}
+# The clang CMake files reference tools from clang-tools-extra.
+Requires: %{name}-tools-extra%{?_isa} = %{version}-%{release}
 
 %description devel
 Development header files for clang.
@@ -144,13 +147,10 @@ Requires: python2
 
 %prep
 %setup -T -q -b 1 -n clang-tools-extra-%{version}.src
-%patch3 -p1 -b .lit-dep-fix
 
 %setup -T -q -b 2 -n test-suite-%{version}.src
-%patch1 -p1 -b .lit-fix
 
 %setup -q -n cfe-%{version}.src
-%patch2 -p1 -b .docs-fix
 %patch4 -p1 -b .lit-tools-fix
 
 mv ../clang-tools-extra-%{version}.src tools/extra
@@ -217,6 +217,9 @@ rm -vf %{buildroot}%{_datadir}/clang/clang-format-diff.py*
 # TODO: Package html docs
 rm -Rvf %{buildroot}%{_pkgdocdir}
 
+# TODO: What are the Fedora guidelines for packaging bash autocomplete files?
+rm -vf %{buildroot}%{_datadir}/clang/bash-autocomplete.sh
+
 %check
 # requires lit.py from LLVM utilities
 cd _build
@@ -270,6 +273,9 @@ make %{?_smp_mflags} check || :
 %{python2_sitelib}/clang/
 
 %changelog
+* Mon Dec 11 2017 Tom Stellard <tstellar@redhat.com> - 5.0.0-1
+- 5.0.0 Release
+
 * Mon Nov 06 2017 Merlin Mathesius <mmathesi@redhat.com> - 4.0.1-7
 - Cleanup spec file conditionals
 
