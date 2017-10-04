@@ -26,7 +26,7 @@
 
 Name:		clang
 Version:	4.0.1
-Release:	5%{?dist}
+Release:	6%{?dist}
 Summary:	A C language family front-end for LLVM
 
 License:	NCSA
@@ -117,7 +117,7 @@ intended to run in tandem with a build of a project or code base.
 %package tools-extra
 Summary: Extra tools for clang
 Requires: llvm-libs%{?_isa} = %{version}
-Requires: clang-libs%{?_isa} = %{version}
+Requires: %{name}-libs%{?_isa} = %{version}-%{release}
 
 %description tools-extra
 A set of extra tools built using Clang's tooling API.
@@ -133,6 +133,14 @@ Requires: python2
 
 %description -n git-clang-format
 clang-format integration for git.
+
+%package -n python2-clang
+Summary: Python2 bindings for clang
+Requires: %{name}-libs%{?_isa} = %{version}-%{release}
+Requires: python2
+%description -n python2-clang
+%{summary}.
+
 
 %prep
 %setup -T -q -b 1 -n clang-tools-extra-%{version}.src
@@ -178,10 +186,13 @@ cd _build
 make %{?_smp_mflags}
 
 %install
-cd _build
-make install DESTDIR=%{buildroot}
+make install DESTDIR=%{buildroot} -C _build
 
 sed -i -e 's~#!/usr/bin/env python~#!%{_bindir}/python2~' %{buildroot}%{_bindir}/git-clang-format
+
+# install clang python bindings
+mkdir -p %{buildroot}%{python2_sitelib}/clang/
+install -p -m644 bindings/python/clang/* %{buildroot}%{python2_sitelib}/clang/
 
 # multilib fix
 mv -v %{buildroot}%{_includedir}/clang/Config/config{,-%{__isa_bits}}.h
@@ -255,7 +266,15 @@ make %{?_smp_mflags} check || :
 %files -n git-clang-format
 %{_bindir}/git-clang-format
 
+%files -n python2-clang
+%{python2_sitelib}/clang/
+
 %changelog
+* Wed Oct 04 2017 Rex Dieter <rdieter@fedoraproject.org> - 4.0.1-6
+- python2-clang subpkg (#1490997)
+- tools-extras: tighten (internal) -libs dep
+- %%install: avoid cd
+
 * Wed Aug 30 2017 Tom Stellard <tstellar@redhat.com> - 4.0.1-5
 - Add Requires: python for git-clang-format
 
