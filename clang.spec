@@ -23,7 +23,7 @@
 	%{_bindir}/clang-import-test \
 	%{_bindir}/clang-offload-bundler
 
-%if 0%{?fedora}
+%if 0%{?fedora} || 0%{?rhel} > 7
 %bcond_without python3
 %else
 %bcond_with python3
@@ -31,7 +31,7 @@
 
 Name:		clang
 Version:	%{maj_ver}.%{min_ver}.%{patch_ver}
-Release:	1%{?dist}
+Release:	2%{?dist}
 Summary:	A C language family front-end for LLVM
 
 License:	NCSA
@@ -273,6 +273,9 @@ make %{?_smp_mflags} check || :
 %{python2_sitelib}/clang/
 
 %changelog
+* Mon Nov 06 2017 Merlin Mathesius <mmathesi@redhat.com> - 5.0.0-2
+- Cleanup spec file conditionals
+
 * Mon Oct 16 2017 Tom Stellard <tstellar@redhat.com> - 5.0.0-1
 - 5.0.0 Release
 
