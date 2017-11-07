@@ -18,7 +18,7 @@
 	%{_bindir}/clang-import-test \
 	%{_bindir}/clang-offload-bundler
 
-%if 0%{?fedora}
+%if 0%{?fedora} || 0%{?rhel} > 7
 %bcond_without python3
 %else
 %bcond_with python3
@@ -26,7 +26,7 @@
 
 Name:		clang
 Version:	4.0.1
-Release:	6%{?dist}
+Release:	7%{?dist}
 Summary:	A C language family front-end for LLVM
 
 License:	NCSA
@@ -270,6 +270,9 @@ make %{?_smp_mflags} check || :
 %{python2_sitelib}/clang/
 
 %changelog
+* Mon Nov 06 2017 Merlin Mathesius <mmathesi@redhat.com> - 4.0.1-7
+- Cleanup spec file conditionals
+
 * Wed Oct 04 2017 Rex Dieter <rdieter@fedoraproject.org> - 4.0.1-6
 - python2-clang subpkg (#1490997)
 - tools-extras: tighten (internal) -libs dep
