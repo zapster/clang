@@ -31,7 +31,7 @@
 
 Name:		clang
 Version:	%{maj_ver}.%{min_ver}.%{patch_ver}
-Release:	2%{?dist}
+Release:	3%{?dist}
 Summary:	A C language family front-end for LLVM
 
 License:	NCSA
@@ -88,7 +88,8 @@ as libraries and designed to be loosely-coupled and extensible.
 
 %package libs
 Summary: Runtime library for clang
-Requires: compiler-rt%{?_isa} >= %{version}
+Recommends: compiler-rt%{?_isa} >= %{version}
+Recommends: libomp%{_isa} = %{version}
 
 %description libs
 Runtime library for clang.
@@ -273,6 +274,9 @@ make %{?_smp_mflags} check || :
 %{python2_sitelib}/clang/
 
 %changelog
+* Wed Dec 13 2017 Tom Stellard <tstellar@redhat.com> - 5.0.0-3
+- Make compiler-rt a weak dependency and add a weak dependency on libomp
+
 * Mon Nov 06 2017 Merlin Mathesius <mmathesi@redhat.com> - 5.0.0-2
 - Cleanup spec file conditionals
 
