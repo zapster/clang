@@ -1,6 +1,6 @@
 %global maj_ver 5
 %global min_ver 0
-%global patch_ver 0
+%global patch_ver 1
 
 %global clang_tools_binaries \
 	%{_bindir}/clangd \
@@ -31,7 +31,7 @@
 
 Name:		clang
 Version:	%{maj_ver}.%{min_ver}.%{patch_ver}
-Release:	3%{?dist}
+Release:	1%{?dist}
 Summary:	A C language family front-end for LLVM
 
 License:	NCSA
@@ -274,6 +274,9 @@ make %{?_smp_mflags} check || :
 %{python2_sitelib}/clang/
 
 %changelog
+* Wed Dec 20 2017 Tom Stellard <tstellar@redhat.com> - 5.0.1-1
+- 5.0.1 Release
+
 * Wed Dec 13 2017 Tom Stellard <tstellar@redhat.com> - 5.0.0-3
 - Make compiler-rt a weak dependency and add a weak dependency on libomp
 
