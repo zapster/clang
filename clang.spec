@@ -31,7 +31,7 @@
 
 Name:		clang
 Version:	%{maj_ver}.%{min_ver}.%{patch_ver}
-Release:	1%{?dist}
+Release:	2%{?dist}
 Summary:	A C language family front-end for LLVM
 
 License:	NCSA
@@ -62,7 +62,7 @@ BuildRequires:  python2-lit
 
 BuildRequires: zlib-devel
 BuildRequires: tcl
-BuildRequires: python-virtualenv
+BuildRequires: python2-virtualenv
 BuildRequires: libstdc++-static
 BuildRequires: python3-sphinx
 
@@ -110,7 +110,7 @@ BuildArch:	noarch
 Requires:	%{name} = %{version}-%{release}
 # not picked up automatically since files are currently not installed in
 # standard Python hierarchies yet
-Requires:	python
+Requires:	python2
 
 %description analyzer
 The Clang Static Analyzer consists of both a source code analysis
@@ -274,6 +274,10 @@ make %{?_smp_mflags} check || :
 %{python2_sitelib}/clang/
 
 %changelog
+* Wed Jan 03 2018 Iryna Shcherbina <ishcherb@redhat.com> - 5.0.1-2
+- Update Python 2 dependency declarations to new packaging standards
+  (See https://fedoraproject.org/wiki/FinalizingFedoraSwitchtoPython3)
+
 * Wed Dec 20 2017 Tom Stellard <tstellar@redhat.com> - 5.0.1-1
 - 5.0.1 Release
 
