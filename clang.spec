@@ -31,7 +31,7 @@
 
 Name:		clang
 Version:	%{maj_ver}.%{min_ver}.%{patch_ver}
-Release:	2%{?dist}
+Release:	3%{?dist}
 Summary:	A C language family front-end for LLVM
 
 License:	NCSA
@@ -44,6 +44,7 @@ Source100:	clang-config.h
 
 Patch4:		0001-lit.cfg-Remove-substitutions-for-clang-llvm-tools.patch
 Patch5:		0001-Merging-r323155.patch
+Patch6:		0001-Driver-Prefer-vendor-supplied-gcc-toolchain.patch
 
 BuildRequires:	cmake
 BuildRequires:	llvm-devel = %{version}
@@ -155,6 +156,7 @@ Requires: python2
 %setup -q -n cfe-%{version}.src
 %patch4 -p1 -b .lit-tools-fix
 %patch5 -p1 -b .retpoline
+%patch6 -p1 -b .vendor-gcc
 
 mv ../clang-tools-extra-%{version}.src tools/extra
 
@@ -276,6 +278,10 @@ make %{?_smp_mflags} check || :
 %{python2_sitelib}/clang/
 
 %changelog
+* Thu Feb 08 2018 Tom Stellard <tstellar@redhat.com> - 5.0.1-3
+- Fix toolchain detection so we don't default to using cross-compilers
+- rhbz1482491
+
 * Tue Feb 06 2018 Tom Stellard <tstellar@redhat.com> - 5.0.1-2
 - Backport retpoline support
 
