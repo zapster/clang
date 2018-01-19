@@ -1,0 +1,19 @@
+---
+- hosts: localhost
+  vars:
+  - artifacts: ./artifacts       
+  tags:
+  - classic
+  tasks:
+  - name: Test block
+    block:
+      - name: Install clang
+        dnf:
+          name: clang
+          state: present
+      - name: Install cross-gcc
+        dnf:
+          name: gcc-x86_64-linux-gnu
+          state: present
+      - name: Test that clang uses the correct gcc toolchain when cross-gcc is installed.
+        shell: echo "int main(){}" | clang -x c - 
