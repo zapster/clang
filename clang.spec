@@ -31,7 +31,7 @@
 
 Name:		clang
 Version:	%{maj_ver}.%{min_ver}.%{patch_ver}
-Release:	2%{?dist}
+Release:	3%{?dist}
 Summary:	A C language family front-end for LLVM
 
 License:	NCSA
@@ -45,11 +45,13 @@ Source100:	clang-config.h
 Patch4:		0001-lit.cfg-Remove-substitutions-for-clang-llvm-tools.patch
 
 BuildRequires:	cmake
-BuildRequires:	llvm-devel = %{version}
+BuildRequires:	llvm5.0-devel = %{version}
+BuildRequires:  %{_libdir}/llvm/FileCheck
+BuildRequires:  %{_libdir}/llvm/not
 BuildRequires:	libxml2-devel
 # llvm-static is required, because clang-tablegen needs libLLVMTableGen, which
 # is not included in libLLVM.so.
-BuildRequires:  llvm-static = %{version}
+BuildRequires:  llvm5.0-static = %{version}
 BuildRequires:  perl-generators
 BuildRequires:  ncurses-devel
 
@@ -120,7 +122,6 @@ intended to run in tandem with a build of a project or code base.
 
 %package tools-extra
 Summary: Extra tools for clang
-Requires: llvm-libs%{?_isa} = %{version}
 Requires: %{name}-libs%{?_isa} = %{version}-%{release}
 
 %description tools-extra
@@ -162,7 +163,7 @@ cd _build
 %cmake .. \
 	-DLLVM_LINK_LLVM_DYLIB:BOOL=ON \
 	-DCMAKE_BUILD_TYPE=RelWithDebInfo \
-	-DLLVM_CONFIG:FILEPATH=/usr/bin/llvm-config-%{__isa_bits} \
+	-DLLVM_CONFIG:FILEPATH=/usr/bin/llvm-config-5.0-%{__isa_bits} \
 	\
 	-DCLANG_ENABLE_ARCMT:BOOL=ON \
 	-DCLANG_ENABLE_STATIC_ANALYZER:BOOL=ON \
@@ -274,6 +275,10 @@ make %{?_smp_mflags} check || :
 %{python2_sitelib}/clang/
 
 %changelog
+* Wed Jan 24 2018 Tom Stellard <tstellar@redhat.com> - 5.0.1-3
+- Rebuild against llvm5.0 compatibility package
+- rhbz#1538231
+
 * Wed Jan 03 2018 Iryna Shcherbina <ishcherb@redhat.com> - 5.0.1-2
 - Update Python 2 dependency declarations to new packaging standards
   (See https://fedoraproject.org/wiki/FinalizingFedoraSwitchtoPython3)
