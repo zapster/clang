@@ -1,6 +1,7 @@
-%global maj_ver 5
+%global maj_ver 6
 %global min_ver 0
-%global patch_ver 1
+%global patch_ver 0
+%global rc_ver 1
 
 %global clang_tools_binaries \
 	%{_bindir}/clangd \
@@ -8,6 +9,7 @@
 	%{_bindir}/clang-change-namespace \
 	%{_bindir}/clang-include-fixer \
 	%{_bindir}/clang-query \
+	%{_bindir}/clang-refactor \
 	%{_bindir}/clang-reorder-fields \
 	%{_bindir}/clang-rename \
 	%{_bindir}/clang-tidy
@@ -20,6 +22,7 @@
 	%{_bindir}/clang-cl \
 	%{_bindir}/clang-cpp \
 	%{_bindir}/clang-format \
+	%{_bindir}/clang-func-mapping \
 	%{_bindir}/clang-import-test \
 	%{_bindir}/clang-offload-bundler
 
@@ -29,38 +32,44 @@
 %bcond_with python3
 %endif
 
+%global clang_srcdir cfe-%{version}%{?rc_ver:rc%{rc_ver}}.src
+%global clang_tools_srcdir clang-tools-extra-%{version}%{?rc_ver:rc%{rc_ver}}.src
+%global test_suite_srcdir test-suite-%{version}%{?rc_ver:rc%{rc_ver}}.src
+
 Name:		clang
 Version:	%{maj_ver}.%{min_ver}.%{patch_ver}
-Release:	3%{?dist}
+Release:	0.1.rc%{rc_ver}%{?dist}
 Summary:	A C language family front-end for LLVM
 
 License:	NCSA
 URL:		http://llvm.org
-Source0:	http://llvm.org/releases/%{version}/cfe-%{version}.src.tar.xz
-Source1:	http://llvm.org/releases/%{version}/clang-tools-extra-%{version}.src.tar.xz
-Source2:	http://llvm.org/releases/%{version}/test-suite-%{version}.src.tar.xz
+Source0:	http://llvm.org/releases/%{version}/%{clang_srcdir}.tar.xz
+Source1:	http://llvm.org/releases/%{version}/%{clang_tools_srcdir}.tar.xz
+Source2:	http://llvm.org/releases/%{version}/%{test_suite_srcdir}.tar.xz
 
 Source100:	clang-config.h
 
-Patch4:		0001-lit.cfg-Remove-substitutions-for-clang-llvm-tools.patch
+Patch0:		0001-lit.cfg-Add-hack-so-lit-can-find-not-and-FileCheck.patch
 
 BuildRequires:	cmake
-BuildRequires:	llvm5.0-devel = %{version}
-BuildRequires:  %{_libdir}/llvm/FileCheck
-BuildRequires:  %{_libdir}/llvm/not
+BuildRequires:	llvm-devel = %{version}
 BuildRequires:	libxml2-devel
 # llvm-static is required, because clang-tablegen needs libLLVMTableGen, which
 # is not included in libLLVM.so.
-BuildRequires:  llvm5.0-static = %{version}
+BuildRequires:  llvm-static = %{version}
 BuildRequires:  perl-generators
 BuildRequires:  ncurses-devel
 
 # These build dependencies are required for the test suite.
 %if %with python3
+# The testsuite uses /usr/bin/lit which is part of the python3-lit package.
 BuildRequires:  python3-lit
-%else
-BuildRequires:  python2-lit
 %endif
+
+# make check-clang passes LLVM_EXTERNAL_LIT as an argument to
+# /usr/bin/python2, so we must have the python2 version of lit.
+# FIXME: We should find a way to not depend on python2-lit.
+BuildRequires:  python2-lit
 
 BuildRequires: zlib-devel
 BuildRequires: tcl
@@ -148,22 +157,29 @@ Requires: python2
 
 
 %prep
-%setup -T -q -b 1 -n clang-tools-extra-%{version}.src
+%setup -T -q -b 1 -n %{clang_tools_srcdir}
 
-%setup -T -q -b 2 -n test-suite-%{version}.src
+%setup -T -q -b 2 -n %{test_suite_srcdir}
 
-%setup -q -n cfe-%{version}.src
-%patch4 -p1 -b .lit-tools-fix
+%setup -q -n %{clang_srcdir}
+%patch0 -p1 -b .lit-search-path
 
-mv ../clang-tools-extra-%{version}.src tools/extra
+mv ../%{clang_tools_srcdir} tools/extra
 
 %build
+
+%if 0%{?__isa_bits} == 64
+sed -i 's/\@FEDORA_LLVM_LIB_SUFFIX\@/64/g' test/lit.cfg.py
+%else
+sed -i 's/\@FEDORA_LLVM_LIB_SUFFIX\@//g' test/lit.cfg.py
+%endif
+
 mkdir -p _build
 cd _build
 %cmake .. \
 	-DLLVM_LINK_LLVM_DYLIB:BOOL=ON \
 	-DCMAKE_BUILD_TYPE=RelWithDebInfo \
-	-DLLVM_CONFIG:FILEPATH=/usr/bin/llvm-config-5.0-%{__isa_bits} \
+	-DLLVM_CONFIG:FILEPATH=/usr/bin/llvm-config-%{__isa_bits} \
 	\
 	-DCLANG_ENABLE_ARCMT:BOOL=ON \
 	-DCLANG_ENABLE_STATIC_ANALYZER:BOOL=ON \
@@ -176,6 +192,7 @@ cd _build
 	-DLLVM_BUILD_DOCS=ON \
 	-DLLVM_ENABLE_SPHINX=ON \
 	-DSPHINX_WARNINGS_AS_ERRORS=OFF \
+	-DLLVM_EXTERNAL_LIT=%{python2_sitelib}/lit/run.py \
 	\
 	-DCLANG_BUILD_EXAMPLES:BOOL=OFF \
 %if 0%{?__isa_bits} == 64
@@ -227,8 +244,8 @@ rm -vf %{buildroot}%{_datadir}/clang/bash-autocomplete.sh
 cd _build
 PATH=%{_libdir}/llvm:$PATH make check-clang
 
-mkdir -p %{_builddir}/test-suite-%{version}.src/_build
-cd %{_builddir}/test-suite-%{version}.src/_build
+mkdir -p %{_builddir}/%{test_suite_srcdir}/_build
+cd %{_builddir}/%{test_suite_srcdir}/_build
 
 # FIXME: Using the cmake macro adds -Werror=format-security to the C/CXX flags,
 # which causes the test suite to fail to build.
@@ -275,6 +292,9 @@ make %{?_smp_mflags} check || :
 %{python2_sitelib}/clang/
 
 %changelog
+* Wed Jan 24 2018 Tom Stellard <tstellar@redhat.com> - 6.0.0-0.1.rc1
+- 6.0.0-rc1 Release
+
 * Wed Jan 24 2018 Tom Stellard <tstellar@redhat.com> - 5.0.1-3
 - Rebuild against llvm5.0 compatibility package
 - rhbz#1538231
