@@ -38,7 +38,7 @@
 
 Name:		clang
 Version:	%{maj_ver}.%{min_ver}.%{patch_ver}
-Release:	0.1.rc%{rc_ver}%{?dist}
+Release:	0.2.rc%{rc_ver}%{?dist}
 Summary:	A C language family front-end for LLVM
 
 License:	NCSA
@@ -59,6 +59,9 @@ BuildRequires:	libxml2-devel
 BuildRequires:  llvm-static = %{version}
 BuildRequires:  perl-generators
 BuildRequires:  ncurses-devel
+# According to https://fedoraproject.org/wiki/Packaging:Emacs a package
+# should BuildRequires: emacs if it packages emacs integration files.
+BuildRequires:	emacs
 
 # These build dependencies are required for the test suite.
 %if %with python3
@@ -86,6 +89,7 @@ Requires:	%{name}-libs%{?_isa} = %{version}-%{release}
 Requires:	libstdc++-devel
 Requires:	gcc-c++
 
+Requires: emacs-filesystem
 
 %description
 clang: noun
@@ -132,6 +136,7 @@ intended to run in tandem with a build of a project or code base.
 %package tools-extra
 Summary: Extra tools for clang
 Requires: %{name}-libs%{?_isa} = %{version}-%{release}
+Requires: emacs-filesystem
 
 %description tools-extra
 A set of extra tools built using Clang's tooling API.
@@ -217,18 +222,21 @@ install -p -m644 bindings/python/clang/* %{buildroot}%{python2_sitelib}/clang/
 mv -v %{buildroot}%{_includedir}/clang/Config/config{,-%{__isa_bits}}.h
 install -m 0644 %{SOURCE100} %{buildroot}%{_includedir}/clang/Config/config.h
 
+# Move emacs integration files to the correct directory
+mkdir -p %{buildroot}%{_emacs_sitestartdir}
+for f in clang-format.el clang-rename.el clang-include-fixer.el; do
+mv %{buildroot}{%{_datadir}/clang,%{_emacs_sitestartdir}}/$f
+done
+
 # remove editor integrations (bbedit, sublime, emacs, vim)
 rm -vf %{buildroot}%{_datadir}/clang/clang-format-bbedit.applescript
 rm -vf %{buildroot}%{_datadir}/clang/clang-format-sublime.py*
-rm -vf %{buildroot}%{_datadir}/clang/clang-format.el
 rm -vf %{buildroot}%{_datadir}/clang/clang-format.py*
 # clang-tools-extra
 rm -vf %{buildroot}%{_datadir}/clang/clang-include-fixer.py
 rm -vf %{buildroot}%{_datadir}/clang/clang-tidy-diff.py
 rm -vf %{buildroot}%{_datadir}/clang/run-clang-tidy.py
 rm -vf %{buildroot}%{_datadir}/clang/run-find-all-symbols.py
-rm -vf %{buildroot}%{_datadir}/clang/clang-include-fixer.el
-rm -vf %{buildroot}%{_datadir}/clang/clang-rename.el
 rm -vf %{buildroot}%{_datadir}/clang/clang-rename.py
 # remove diff reformatter
 rm -vf %{buildroot}%{_datadir}/clang/clang-format-diff.py*
@@ -259,6 +267,7 @@ make %{?_smp_mflags} check || :
 %{clang_binaries}
 %{_bindir}/c-index-test
 %{_mandir}/man1/clang.1.gz
+%{_emacs_sitestartdir}/clang-format.el
 
 %files libs
 %{_libdir}/*.so.*
@@ -284,6 +293,8 @@ make %{?_smp_mflags} check || :
 %{clang_tools_binaries}
 %{_bindir}/find-all-symbols
 %{_bindir}/modularize
+%{_emacs_sitestartdir}/clang-rename.el
+%{_emacs_sitestartdir}/clang-include-fixer.el
 
 %files -n git-clang-format
 %{_bindir}/git-clang-format
@@ -292,6 +303,9 @@ make %{?_smp_mflags} check || :
 %{python2_sitelib}/clang/
 
 %changelog
+* Fri Jan 26 2018 Tom Stellard <tstellar@redhat.com> - 6.0.0-0.2.rc1
+- Package emacs integration files
+
 * Wed Jan 24 2018 Tom Stellard <tstellar@redhat.com> - 6.0.0-0.1.rc1
 - 6.0.0-rc1 Release
 
