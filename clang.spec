@@ -38,7 +38,7 @@
 
 Name:		clang
 Version:	%{maj_ver}.%{min_ver}.%{patch_ver}
-Release:	0.2.rc%{rc_ver}%{?dist}
+Release:	0.3.rc%{rc_ver}%{?dist}
 Summary:	A C language family front-end for LLVM
 
 License:	NCSA
@@ -50,6 +50,7 @@ Source2:	http://llvm.org/releases/%{version}/%{test_suite_srcdir}.tar.xz
 Source100:	clang-config.h
 
 Patch0:		0001-lit.cfg-Add-hack-so-lit-can-find-not-and-FileCheck.patch
+Patch1:		0001-GCC-compatibility-Ignore-fstack-clash-protection.patch
 
 BuildRequires:	cmake
 BuildRequires:	llvm-devel = %{version}
@@ -168,6 +169,7 @@ Requires: python2
 
 %setup -q -n %{clang_srcdir}
 %patch0 -p1 -b .lit-search-path
+%patch1 -p1 -b .fstack-clash-protection
 
 mv ../%{clang_tools_srcdir} tools/extra
 
@@ -303,6 +305,9 @@ make %{?_smp_mflags} check || :
 %{python2_sitelib}/clang/
 
 %changelog
+* Fri Jan 26 2018 Tom Stellard <tstellar@redhat.com> - 6.0.0-0.3.rc1
+- Ignore -fstack-clash-protection option instead of giving an error
+
 * Fri Jan 26 2018 Tom Stellard <tstellar@redhat.com> - 6.0.0-0.2.rc1
 - Package emacs integration files
 
