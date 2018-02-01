@@ -38,7 +38,7 @@
 
 Name:		clang
 Version:	%{maj_ver}.%{min_ver}.%{patch_ver}
-Release:	0.3.rc%{rc_ver}%{?dist}
+Release:	0.4.rc%{rc_ver}%{?dist}
 Summary:	A C language family front-end for LLVM
 
 License:	NCSA
@@ -230,18 +230,14 @@ for f in clang-format.el clang-rename.el clang-include-fixer.el; do
 mv %{buildroot}{%{_datadir}/clang,%{_emacs_sitestartdir}}/$f
 done
 
+#Fix python shebang
+for f in clang-tidy-diff.py clang-format-diff.py  run-clang-tidy.py run-find-all-symbols.py; do
+	sed -i -e '1{\@^#!/usr/bin/env python@d}' %{buildroot}%{_datadir}/clang/$f
+done
+
 # remove editor integrations (bbedit, sublime, emacs, vim)
 rm -vf %{buildroot}%{_datadir}/clang/clang-format-bbedit.applescript
 rm -vf %{buildroot}%{_datadir}/clang/clang-format-sublime.py*
-rm -vf %{buildroot}%{_datadir}/clang/clang-format.py*
-# clang-tools-extra
-rm -vf %{buildroot}%{_datadir}/clang/clang-include-fixer.py
-rm -vf %{buildroot}%{_datadir}/clang/clang-tidy-diff.py
-rm -vf %{buildroot}%{_datadir}/clang/run-clang-tidy.py
-rm -vf %{buildroot}%{_datadir}/clang/run-find-all-symbols.py
-rm -vf %{buildroot}%{_datadir}/clang/clang-rename.py
-# remove diff reformatter
-rm -vf %{buildroot}%{_datadir}/clang/clang-format-diff.py*
 
 # TODO: Package html docs
 rm -Rvf %{buildroot}%{_pkgdocdir}
@@ -270,6 +266,8 @@ make %{?_smp_mflags} check || :
 %{_bindir}/c-index-test
 %{_mandir}/man1/clang.1.gz
 %{_emacs_sitestartdir}/clang-format.el
+%{_datadir}/clang/clang-format.py*
+%{_datadir}/clang/clang-format-diff.py*
 
 %files libs
 %{_libdir}/*.so.*
@@ -297,6 +295,11 @@ make %{?_smp_mflags} check || :
 %{_bindir}/modularize
 %{_emacs_sitestartdir}/clang-rename.el
 %{_emacs_sitestartdir}/clang-include-fixer.el
+%{_datadir}/clang/clang-include-fixer.py*
+%{_datadir}/clang/clang-tidy-diff.py*
+%{_datadir}/clang/run-clang-tidy.py*
+%{_datadir}/clang/run-find-all-symbols.py*
+%{_datadir}/clang/clang-rename.py*
 
 %files -n git-clang-format
 %{_bindir}/git-clang-format
@@ -305,6 +308,9 @@ make %{?_smp_mflags} check || :
 %{python2_sitelib}/clang/
 
 %changelog
+* Thu Feb 01 2018 Tom Stellard <tstellar@redhat.com> - 6.0.0-0.4.rc1
+- Package python helper scripts for tools
+
 * Fri Jan 26 2018 Tom Stellard <tstellar@redhat.com> - 6.0.0-0.3.rc1
 - Ignore -fstack-clash-protection option instead of giving an error
 
