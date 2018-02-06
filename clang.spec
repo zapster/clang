@@ -31,7 +31,7 @@
 
 Name:		clang
 Version:	%{maj_ver}.%{min_ver}.%{patch_ver}
-Release:	1%{?dist}
+Release:	2%{?dist}
 Summary:	A C language family front-end for LLVM
 
 License:	NCSA
@@ -43,6 +43,7 @@ Source2:	http://llvm.org/releases/%{version}/test-suite-%{version}.src.tar.xz
 Source100:	clang-config.h
 
 Patch4:		0001-lit.cfg-Remove-substitutions-for-clang-llvm-tools.patch
+Patch5:		0001-Merging-r323155.patch
 
 BuildRequires:	cmake
 BuildRequires:	llvm-devel = %{version}
@@ -153,6 +154,7 @@ Requires: python2
 
 %setup -q -n cfe-%{version}.src
 %patch4 -p1 -b .lit-tools-fix
+%patch5 -p1 -b .retpoline
 
 mv ../clang-tools-extra-%{version}.src tools/extra
 
@@ -274,6 +276,9 @@ make %{?_smp_mflags} check || :
 %{python2_sitelib}/clang/
 
 %changelog
+* Tue Feb 06 2018 Tom Stellard <tstellar@redhat.com> - 5.0.1-2
+- Backport retpoline support
+
 * Wed Dec 20 2017 Tom Stellard <tstellar@redhat.com> - 5.0.1-1
 - 5.0.1 Release
 
