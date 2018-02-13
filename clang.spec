@@ -1,7 +1,7 @@
 %global maj_ver 6
 %global min_ver 0
 %global patch_ver 0
-%global rc_ver 1
+%global rc_ver 2
 
 %global clang_tools_binaries \
 	%{_bindir}/clangd \
@@ -38,7 +38,7 @@
 
 Name:		clang
 Version:	%{maj_ver}.%{min_ver}.%{patch_ver}
-Release:	0.5.rc%{rc_ver}%{?dist}
+Release:	0.6.rc%{rc_ver}%{?dist}
 Summary:	A C language family front-end for LLVM
 
 License:	NCSA
@@ -308,6 +308,9 @@ make %{?_smp_mflags} check || :
 %{python2_sitelib}/clang/
 
 %changelog
+* Mon Feb 12 2018 Tom Stellard <tstellar@redhat.com> - 6.0.0-0.6.rc2
+- 6.0.0-rc2 Release
+
 * Wed Feb 07 2018 Fedora Release Engineering <releng@fedoraproject.org> - 6.0.0-0.5.rc1
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_28_Mass_Rebuild
 
