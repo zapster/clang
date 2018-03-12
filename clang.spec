@@ -37,7 +37,7 @@
 
 Name:		clang
 Version:	%{maj_ver}.%{min_ver}.%{patch_ver}
-Release:	1%{?dist}
+Release:	2%{?dist}
 Summary:	A C language family front-end for LLVM
 
 License:	NCSA
@@ -90,6 +90,8 @@ Requires:	libstdc++-devel
 Requires:	gcc-c++
 
 Requires: emacs-filesystem
+
+Provides: clang(major) = %{maj_ver}
 
 %description
 clang: noun
@@ -307,6 +309,9 @@ make %{?_smp_mflags} check || :
 %{python2_sitelib}/clang/
 
 %changelog
+* Mon Mar 12 2018 Tom Stellard <tstellar@redhat.com> - 6.0.0-2
+- Add Provides: clang(major) rhbz#1547444
+
 * Fri Mar 09 2018 Tom Stellard <tstellar@redhat.com> - 6.0.0-1
 - 6.0.0 Release
 
