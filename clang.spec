@@ -37,7 +37,7 @@
 
 Name:		clang
 Version:	%{maj_ver}.%{min_ver}.%{patch_ver}
-Release:	2%{?dist}
+Release:	3%{?dist}
 Summary:	A C language family front-end for LLVM
 
 License:	NCSA
@@ -50,6 +50,7 @@ Source100:	clang-config.h
 
 Patch0:		0001-lit.cfg-Add-hack-so-lit-can-find-not-and-FileCheck.patch
 Patch1:		0001-GCC-compatibility-Ignore-fstack-clash-protection.patch
+Patch2:		0001-Driver-Prefer-vendor-supplied-gcc-toolchain.patch
 
 BuildRequires:	cmake
 BuildRequires:	llvm-devel = %{version}
@@ -171,6 +172,7 @@ Requires: python2
 %setup -q -n %{clang_srcdir}
 %patch0 -p1 -b .lit-search-path
 %patch1 -p1 -b .fstack-clash-protection
+%patch2 -p1 -b .vendor-gcc
 
 mv ../%{clang_tools_srcdir} tools/extra
 
@@ -309,6 +311,10 @@ make %{?_smp_mflags} check || :
 %{python2_sitelib}/clang/
 
 %changelog
+* Wed Mar 21 2018 Tom Stellard <tstellar@redhat.com> - 6.0.0-3
+- Fix toolchain detection so we don't default to using cross-compilers:
+  rhbz#1482491
+
 * Mon Mar 12 2018 Tom Stellard <tstellar@redhat.com> - 6.0.0-2
 - Add Provides: clang(major) rhbz#1547444
 
