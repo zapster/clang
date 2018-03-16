@@ -1,0 +1,58 @@
+From fb059232298398dca898d7ca765f74a81d5af995 Mon Sep 17 00:00:00 2001
+From: Richard Trieu <rtrieu@google.com>
+Date: Wed, 9 Aug 2017 02:03:59 +0000
+Subject: [PATCH] Allow operator delete to be an invalid Decl.
+
+Do not discard invalid Decl when searching for the operator delete function.
+The lookup for this function always expects to find a result, so sometimes the
+invalid Decl is the only choice possible.  This fixes PR34109.
+
+
+git-svn-id: https://llvm.org/svn/llvm-project/cfe/trunk@310435 91177308-0d34-0410-b5e6-96231b3b80d8
+---
+ lib/Sema/SemaExprCXX.cpp             |  3 ---
+ test/SemaCXX/MicrosoftExtensions.cpp | 14 ++++++++++++++
+ 2 files changed, 14 insertions(+), 3 deletions(-)
+
+diff --git a/lib/Sema/SemaExprCXX.cpp b/lib/Sema/SemaExprCXX.cpp
+index 9c0bd6fedd..4ef6df70b8 100644
+--- a/lib/Sema/SemaExprCXX.cpp
++++ b/lib/Sema/SemaExprCXX.cpp
+@@ -1378,9 +1378,6 @@ Sema::BuildCXXTypeConstructExpr(TypeSourceInfo *TInfo,
+ /// \brief Determine whether the given function is a non-placement
+ /// deallocation function.
+ static bool isNonPlacementDeallocationFunction(Sema &S, FunctionDecl *FD) {
+-  if (FD->isInvalidDecl())
+-    return false;
+-
+   if (CXXMethodDecl *Method = dyn_cast<CXXMethodDecl>(FD))
+     return Method->isUsualDeallocationFunction();
+ 
+diff --git a/test/SemaCXX/MicrosoftExtensions.cpp b/test/SemaCXX/MicrosoftExtensions.cpp
+index 38949e1137..c605dcb912 100644
+--- a/test/SemaCXX/MicrosoftExtensions.cpp
++++ b/test/SemaCXX/MicrosoftExtensions.cpp
+@@ -504,6 +504,20 @@ struct S {
+ int S::fn() { return 0; } // expected-warning {{is missing exception specification}}
+ }
+ 
++class PR34109_class {
++  PR34109_class() {}
++  virtual ~PR34109_class() {}
++};
++
++void operator delete(void *) throw();
++// expected-note@-1 {{previous declaration is here}}
++__declspec(dllexport) void operator delete(void *) throw();
++// expected-error@-1  {{redeclaration of 'operator delete' cannot add 'dllexport' attribute}}
++
++void PR34109(int* a) {
++  delete a;
++}
++
+ #elif TEST2
+ 
+ // Check that __unaligned is not recognized if MS extensions are not enabled
+-- 
+2.13.6
+

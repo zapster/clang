@@ -31,7 +31,7 @@
 
 Name:		clang
 Version:	%{maj_ver}.%{min_ver}.%{patch_ver}
-Release:	3%{?dist}
+Release:	4%{?dist}
 Summary:	A C language family front-end for LLVM
 
 License:	NCSA
@@ -45,6 +45,7 @@ Source100:	clang-config.h
 Patch4:		0001-lit.cfg-Remove-substitutions-for-clang-llvm-tools.patch
 Patch5:		0001-Merging-r323155.patch
 Patch6:		0001-Driver-Prefer-vendor-supplied-gcc-toolchain.patch
+Patch7:		0001-Allow-operator-delete-to-be-an-invalid-Decl.patch
 
 BuildRequires:	cmake
 BuildRequires:	llvm-devel = %{version}
@@ -157,6 +158,7 @@ Requires: python2
 %patch4 -p1 -b .lit-tools-fix
 %patch5 -p1 -b .retpoline
 %patch6 -p1 -b .vendor-gcc
+%patch7 -p1 -b .operator-fix
 
 mv ../clang-tools-extra-%{version}.src tools/extra
 
@@ -278,6 +280,9 @@ make %{?_smp_mflags} check || :
 %{python2_sitelib}/clang/
 
 %changelog
+* Fri Mar 16 2018 Tom Stellard <tstellar@redhat.com> - 5.0.1-4
+- Backport r310435 from clang trunk. rhbz#1554280
+
 * Thu Feb 08 2018 Tom Stellard <tstellar@redhat.com> - 5.0.1-3
 - Fix toolchain detection so we don't default to using cross-compilers
 - rhbz1482491
