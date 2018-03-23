@@ -17,6 +17,7 @@
 	%{_bindir}/clang \
 	%{_bindir}/clang++ \
 	%{_bindir}/clang-%{maj_ver}.%{min_ver} \
+	%{_bindir}/clang++-%{maj_ver}.%{min_ver} \
 	%{_bindir}/clang-check \
 	%{_bindir}/clang-cl \
 	%{_bindir}/clang-cpp \
@@ -37,7 +38,7 @@
 
 Name:		clang
 Version:	%{maj_ver}.%{min_ver}.%{patch_ver}
-Release:	4%{?dist}
+Release:	5%{?dist}
 Summary:	A C language family front-end for LLVM
 
 License:	NCSA
@@ -248,6 +249,9 @@ rm -Rvf %{buildroot}%{_pkgdocdir}
 # TODO: What are the Fedora guidelines for packaging bash autocomplete files?
 rm -vf %{buildroot}%{_datadir}/clang/bash-autocomplete.sh
 
+# Add clang++-{version} sylink
+ln -s %{_bindir}/clang++ %{buildroot}%{_bindir}/clang++-%{maj_ver}.%{min_ver}
+
 %check
 # requires lit.py from LLVM utilities
 cd _build
@@ -317,6 +321,9 @@ make %{?_smp_mflags} check || :
 %{python2_sitelib}/clang/
 
 %changelog
+* Fri Mar 23 2018 Tom Stellard <tstellar@redhat.com> - 6.0.0-5
+- Add a clang++-{version} symlink rhbz#1534098
+
 * Thu Mar 22 2018 Tom Stellard <tstellar@redhat.com> - 6.0.0-4
 - Use correct script for running lit tests
 
