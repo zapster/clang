@@ -1,6 +1,6 @@
 %global maj_ver 5
 %global min_ver 0
-%global patch_ver 1
+%global patch_ver 2
 
 %global clang_tools_binaries \
 	%{_bindir}/clangd \
@@ -32,7 +32,7 @@
 
 Name:		clang
 Version:	%{maj_ver}.%{min_ver}.%{patch_ver}
-Release:	5%{?dist}
+Release:	1%{?dist}
 Summary:	A C language family front-end for LLVM
 
 License:	NCSA
@@ -44,7 +44,6 @@ Source2:	http://llvm.org/releases/%{version}/test-suite-%{version}.src.tar.xz
 Source100:	clang-config.h
 
 Patch4:		0001-lit.cfg-Remove-substitutions-for-clang-llvm-tools.patch
-Patch5:		0001-Merging-r323155.patch
 Patch6:		0001-Driver-Prefer-vendor-supplied-gcc-toolchain.patch
 Patch7:		0001-Allow-operator-delete-to-be-an-invalid-Decl.patch
 
@@ -157,7 +156,6 @@ Requires: python2
 
 %setup -q -n cfe-%{version}.src
 %patch4 -p1 -b .lit-tools-fix
-%patch5 -p1 -b .retpoline
 %patch6 -p1 -b .vendor-gcc
 %patch7 -p1 -b .operator-fix
 
@@ -284,6 +282,9 @@ make %{?_smp_mflags} check || :
 %{python2_sitelib}/clang/
 
 %changelog
+* Mon May 07 2018 Tom Stellard <tstellar@redhat.com> - 5.0.2-1
+- 5.0.2 Release
+
 * Fri Mar 23 2018 Tom Stellard <tstellar@redhat.com> - 5.0.1-5
 - Add a clang++-{version} symlink rhbz#1534098
 
