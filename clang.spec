@@ -1,6 +1,8 @@
 %global maj_ver 6
 %global min_ver 0
-%global patch_ver 0
+%global patch_ver 1
+
+%global rc_ver 1
 
 %global clang_tools_binaries \
 	%{_bindir}/clangd \
@@ -38,7 +40,7 @@
 
 Name:		clang
 Version:	%{maj_ver}.%{min_ver}.%{patch_ver}
-Release:	5%{?dist}
+Release:	0.1.rc%{rc_ver}%{?dist}
 Summary:	A C language family front-end for LLVM
 
 License:	NCSA
@@ -187,6 +189,12 @@ sed -i 's/\@FEDORA_LLVM_LIB_SUFFIX\@//g' test/lit.cfg.py
 
 mkdir -p _build
 cd _build
+
+%ifarch %{arm}
+# Decrease debuginfo verbosity to reduce memory consumption during final library linking
+%global optflags %(echo %{optflags} | sed 's/-g /-g1 /')
+%endif
+
 %cmake .. \
 	-DLLVM_LINK_LLVM_DYLIB:BOOL=ON \
 	-DCMAKE_BUILD_TYPE=RelWithDebInfo \
@@ -321,6 +329,9 @@ make %{?_smp_mflags} check || :
 %{python2_sitelib}/clang/
 
 %changelog
+* Fri May 11 2018 Tom Stellard <tstellar@redhat.com> - 6.0.1-0.1.rc1
+- 6.0.1-rc1 Release
+
 * Fri Mar 23 2018 Tom Stellard <tstellar@redhat.com> - 6.0.0-5
 - Add a clang++-{version} symlink rhbz#1534098
 
