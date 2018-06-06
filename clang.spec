@@ -40,7 +40,7 @@
 
 Name:		clang
 Version:	%{maj_ver}.%{min_ver}.%{patch_ver}
-Release:	0.1.rc%{rc_ver}%{?dist}
+Release:	0.2.rc%{rc_ver}%{?dist}
 Summary:	A C language family front-end for LLVM
 
 License:	NCSA
@@ -329,6 +329,9 @@ make %{?_smp_mflags} check || :
 %{python2_sitelib}/clang/
 
 %changelog
+* Wed Jun 06 2018 Tom Stellard <tstellar@redhat.com> - 6.0.1-0.2.rc1
+- Rebuild after disabling non-native targets in libLLVM.so
+
 * Fri May 11 2018 Tom Stellard <tstellar@redhat.com> - 6.0.1-0.1.rc1
 - 6.0.1-rc1 Release
 
