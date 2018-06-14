@@ -1,1 +1,12 @@
-- include: gcc-detector.yml
+- hosts: localhost
+  roles:
+  - role: standard-test-basic
+    tags:
+      - classic
+    required_packages:
+      - clang
+      - gcc-x86_64-linux-gnu
+    tests:
+      - rhbz#482491:
+          dir: ./
+          run: echo "int main(){}" | clang -x c -
