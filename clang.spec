@@ -2,8 +2,6 @@
 %global min_ver 0
 %global patch_ver 1
 
-%global rc_ver 2
-
 %global clang_tools_binaries \
 	%{_bindir}/clangd \
 	%{_bindir}/clang-apply-replacements \
@@ -40,7 +38,7 @@
 
 Name:		clang
 Version:	%{maj_ver}.%{min_ver}.%{patch_ver}
-Release:	0.2.rc%{rc_ver}%{?dist}
+Release:	1%{?dist}
 Summary:	A C language family front-end for LLVM
 
 License:	NCSA
@@ -329,6 +327,9 @@ make %{?_smp_mflags} check || :
 %{python2_sitelib}/clang/
 
 %changelog
+* Tue Jun 26 2018 Tom Stellard <tstellar@redhat.com> - 6.0.1-1
+- 6.0.1 Release
+
 * Wed Jun 13 2018 Tom Stellard <tstellar@redhat.com> - 6.0.1-0.2.rc2
 - 6.0.1-rc2
 
