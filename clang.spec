@@ -53,6 +53,8 @@ Patch0:		0001-lit.cfg-Add-hack-so-lit-can-find-not-and-FileCheck.patch
 Patch1:		0001-GCC-compatibility-Ignore-fstack-clash-protection.patch
 Patch2:		0001-Driver-Prefer-vendor-supplied-gcc-toolchain.patch
 
+BuildRequires:  gcc
+BuildRequires:  gcc-c++
 BuildRequires:	cmake
 BuildRequires:	llvm-devel = %{version}
 BuildRequires:	libxml2-devel
