@@ -1,3 +1,5 @@
+%global compat_build 0
+
 %global maj_ver 6
 %global min_ver 0
 %global patch_ver 1
@@ -26,6 +28,22 @@
 	%{_bindir}/clang-import-test \
 	%{_bindir}/clang-offload-bundler
 
+%if 0%{?compat_build}
+%global pkg_name clang%{maj_ver}.%{min_ver}
+# Install clang to same prefix as llvm, so that apps that use llvm-config
+# will also be able to find clang libs.
+%global install_prefix %{_libdir}/llvm%{maj_ver}.%{min_ver}
+%global install_bindir %{install_prefix}/bin
+%global install_includedir %{install_prefix}/include
+%global install_libdir %{install_prefix}/lib
+
+%global pkg_bindir %{install_bindir}
+%global pkg_includedir %{_includedir}/llvm%{maj_ver}.%{min_ver}
+%global pkg_libdir %{install_libdir}
+%else
+%global pkg_name clang
+%endif
+
 %if 0%{?fedora} || 0%{?rhel} > 7
 %bcond_without python3
 %else
@@ -36,16 +54,18 @@
 %global clang_tools_srcdir clang-tools-extra-%{version}%{?rc_ver:rc%{rc_ver}}.src
 %global test_suite_srcdir test-suite-%{version}%{?rc_ver:rc%{rc_ver}}.src
 
-Name:		clang
+Name:		%pkg_name
 Version:	%{maj_ver}.%{min_ver}.%{patch_ver}
-Release:	2%{?dist}
+Release:	3%{?dist}
 Summary:	A C language family front-end for LLVM
 
 License:	NCSA
 URL:		http://llvm.org
 Source0:	http://llvm.org/releases/%{version}/%{clang_srcdir}.tar.xz
+%if !0%{?compat_build}
 Source1:	http://llvm.org/releases/%{version}/%{clang_tools_srcdir}.tar.xz
 Source2:	http://llvm.org/releases/%{version}/%{test_suite_srcdir}.tar.xz
+%endif
 
 Source100:	clang-config.h
 
@@ -56,11 +76,17 @@ Patch2:		0001-Driver-Prefer-vendor-supplied-gcc-toolchain.patch
 BuildRequires:  gcc
 BuildRequires:  gcc-c++
 BuildRequires:	cmake
+%if 0%{?compat_build}
+BuildRequires:	llvm%{maj_ver}.%{min_ver}-devel = %{version}
+BuildRequires:  llvm%{maj_ver}.%{min_ver}-static = %{version}
+%else
 BuildRequires:	llvm-devel = %{version}
+BuildRequires:  llvm-static = %{version}
+%endif
+
 BuildRequires:	libxml2-devel
 # llvm-static is required, because clang-tablegen needs libLLVMTableGen, which
 # is not included in libLLVM.so.
-BuildRequires:  llvm-static = %{version}
 BuildRequires:  perl-generators
 BuildRequires:  ncurses-devel
 # According to https://fedoraproject.org/wiki/Packaging:Emacs a package
@@ -124,6 +150,7 @@ Requires: %{name}-tools-extra%{?_isa} = %{version}-%{release}
 %description devel
 Development header files for clang.
 
+%if !0%{?compat_build}
 %package analyzer
 Summary:	A source code analysis framework
 License:	NCSA and MIT
@@ -165,9 +192,13 @@ Requires: %{name}-libs%{?_isa} = %{version}-%{release}
 Requires: python2
 %description -n python2-clang
 %{summary}.
+%endif
 
 
 %prep
+%if 0%{?compat_build}
+%autosetup -n %{clang_srcdir} -p1
+%else
 %setup -T -q -b 1 -n %{clang_tools_srcdir}
 
 %setup -T -q -b 2 -n %{test_suite_srcdir}
@@ -178,6 +209,7 @@ Requires: python2
 %patch2 -p1 -b .vendor-gcc
 
 mv ../%{clang_tools_srcdir} tools/extra
+%endif
 
 %build
 
@@ -198,12 +230,24 @@ cd _build
 %cmake .. \
 	-DLLVM_LINK_LLVM_DYLIB:BOOL=ON \
 	-DCMAKE_BUILD_TYPE=RelWithDebInfo \
+%if 0%{?compat_build}
+	-DLLVM_CONFIG:FILEPATH=%{_bindir}/llvm-config-%{maj_ver}.%{min_ver}-%{__isa_bits} \
+	-DCMAKE_INSTALL_PREFIX=%{install_prefix} \
+	-DCLANG_INCLUDE_TESTS:BOOL=OFF \
+%else
 	-DLLVM_CONFIG:FILEPATH=/usr/bin/llvm-config-%{__isa_bits} \
+	-DCLANG_INCLUDE_TESTS:BOOL=ON \
+	-DLLVM_EXTERNAL_LIT=%{python2_sitelib}/lit/main.py \
+%if 0%{?__isa_bits} == 64
+        -DLLVM_LIBDIR_SUFFIX=64 \
+%else
+        -DLLVM_LIBDIR_SUFFIX= \
+%endif
+%endif
 	\
 	-DCLANG_ENABLE_ARCMT:BOOL=ON \
 	-DCLANG_ENABLE_STATIC_ANALYZER:BOOL=ON \
 	-DCLANG_INCLUDE_DOCS:BOOL=ON \
-	-DCLANG_INCLUDE_TESTS:BOOL=ON \
 	-DCLANG_PLUGIN_SUPPORT:BOOL=ON \
 	-DENABLE_LINKER_BUILD_ID:BOOL=ON \
 	-DLLVM_ENABLE_EH=ON \
@@ -211,20 +255,28 @@ cd _build
 	-DLLVM_BUILD_DOCS=ON \
 	-DLLVM_ENABLE_SPHINX=ON \
 	-DSPHINX_WARNINGS_AS_ERRORS=OFF \
-	-DLLVM_EXTERNAL_LIT=%{python2_sitelib}/lit/main.py \
 	\
 	-DCLANG_BUILD_EXAMPLES:BOOL=OFF \
-%if 0%{?__isa_bits} == 64
-        -DLLVM_LIBDIR_SUFFIX=64 \
-%else
-        -DLLVM_LIBDIR_SUFFIX= \
-%endif
 	-DLIB_SUFFIX=
 
 make %{?_smp_mflags}
 
 %install
 make install DESTDIR=%{buildroot} -C _build
+
+%if 0%{?compat_build}
+
+# Remove binaries/other files
+rm -Rf %{buildroot}%{install_bindir}
+rm -Rf %{buildroot}%{install_prefix}/share
+rm -Rf %{buildroot}%{install_prefix}/libexec
+
+# Move include files
+mkdir -p %{buildroot}%{pkg_includedir}
+mv  %{buildroot}/%{install_includedir}/clang %{buildroot}/%{pkg_includedir}/
+mv  %{buildroot}/%{install_includedir}/clang-c %{buildroot}/%{pkg_includedir}/
+
+%else
 
 sed -i -e 's~#!/usr/bin/env python~#!%{_bindir}/python2~' %{buildroot}%{_bindir}/git-clang-format
 
@@ -260,7 +312,10 @@ rm -vf %{buildroot}%{_datadir}/clang/bash-autocomplete.sh
 # Add clang++-{version} sylink
 ln -s %{_bindir}/clang++ %{buildroot}%{_bindir}/clang++-%{maj_ver}.%{min_ver}
 
+%endif
+
 %check
+%if !0%{?compat_build}
 # requires lit.py from LLVM utilities
 cd _build
 # FIXME: Fix failing ARM tests
@@ -279,8 +334,10 @@ cd %{_builddir}/%{test_suite_srcdir}/_build
 cmake .. -DCMAKE_C_COMPILER=%{buildroot}/usr/bin/clang \
          -DCMAKE_CXX_COMPILER=%{buildroot}/usr/bin/clang++
 make %{?_smp_mflags} check || :
+%endif
 
 
+%if !0%{?compat_build}
 %files
 %{_libdir}/clang/
 %{clang_binaries}
@@ -289,17 +346,31 @@ make %{?_smp_mflags} check || :
 %{_emacs_sitestartdir}/clang-format.el
 %{_datadir}/clang/clang-format.py*
 %{_datadir}/clang/clang-format-diff.py*
+%endif
 
 %files libs
+%if !0%{?compat_build}
 %{_libdir}/*.so.*
 %{_libdir}/*.so
+%else
+%{pkg_libdir}/*.so.*
+%{pkg_libdir}/*.so
+%{pkg_libdir}/clang/%{version}
+%endif
 
 %files devel
+%if !0%{?compat_build}
 %{_includedir}/clang/
 %{_includedir}/clang-c/
 %{_libdir}/cmake/*
 %dir %{_datadir}/clang/
+%else
+%{pkg_includedir}/clang/
+%{pkg_includedir}/clang-c/
+%{pkg_libdir}/cmake/
+%endif
 
+%if !0%{?compat_build}
 %files analyzer
 %{_bindir}/scan-view
 %{_bindir}/scan-build
@@ -328,7 +399,11 @@ make %{?_smp_mflags} check || :
 %files -n python2-clang
 %{python2_sitelib}/clang/
 
+%endif
 %changelog
+* Mon Jul 23 2018 Tom Stellard <tstellar@redhat.com> - 6.0.1-3
+- Sync spec file with the clang6.0 package
+
 * Thu Jul 12 2018 Fedora Release Engineering <releng@fedoraproject.org> - 6.0.1-2
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_29_Mass_Rebuild
 
