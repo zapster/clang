@@ -1,8 +1,9 @@
 %global compat_build 0
 
-%global maj_ver 6
+%global maj_ver 7
 %global min_ver 0
-%global patch_ver 1
+%global patch_ver 0
+%global rc_ver 1
 
 %global clang_tools_binaries \
 	%{_bindir}/clangd \
@@ -18,15 +19,17 @@
 %global clang_binaries \
 	%{_bindir}/clang \
 	%{_bindir}/clang++ \
-	%{_bindir}/clang-%{maj_ver}.%{min_ver} \
-	%{_bindir}/clang++-%{maj_ver}.%{min_ver} \
+	%{_bindir}/clang-%{maj_ver} \
+	%{_bindir}/clang++-%{maj_ver} \
 	%{_bindir}/clang-check \
 	%{_bindir}/clang-cl \
 	%{_bindir}/clang-cpp \
 	%{_bindir}/clang-format \
 	%{_bindir}/clang-func-mapping \
 	%{_bindir}/clang-import-test \
-	%{_bindir}/clang-offload-bundler
+	%{_bindir}/clang-offload-bundler \
+	%{_bindir}/diagtool \
+	%{_bindir}/hmaptool
 
 %if 0%{?compat_build}
 %global pkg_name clang%{maj_ver}.%{min_ver}
@@ -56,12 +59,12 @@
 
 Name:		%pkg_name
 Version:	%{maj_ver}.%{min_ver}.%{patch_ver}
-Release:	3%{?dist}
+Release:	0.1.rc%{rc_ver}%{?dist}
 Summary:	A C language family front-end for LLVM
 
 License:	NCSA
 URL:		http://llvm.org
-Source0:	http://llvm.org/releases/%{version}/%{clang_srcdir}.tar.xz
+Source0:	http://%{?rc_ver:pre}releases.llvm.org/%{version}/%{?rc_ver:rc%{rc_ver}}/%{clang_srcdir}.tar.xz
 %if !0%{?compat_build}
 Source1:	http://llvm.org/releases/%{version}/%{clang_tools_srcdir}.tar.xz
 Source2:	http://llvm.org/releases/%{version}/%{test_suite_srcdir}.tar.xz
@@ -72,6 +75,8 @@ Source100:	clang-config.h
 Patch0:		0001-lit.cfg-Add-hack-so-lit-can-find-not-and-FileCheck.patch
 Patch1:		0001-GCC-compatibility-Ignore-fstack-clash-protection.patch
 Patch2:		0001-Driver-Prefer-vendor-supplied-gcc-toolchain.patch
+# This was merged into the release_70 branch after 7.0.0-rc1
+Patch3:		0001-Merging-r338627.patch 
 
 BuildRequires:  gcc
 BuildRequires:  gcc-c++
@@ -109,6 +114,7 @@ BuildRequires: tcl
 BuildRequires: python2-virtualenv
 BuildRequires: libstdc++-static
 BuildRequires: python3-sphinx
+BuildRequires: libatomic
 
 
 Requires:	%{name}-libs%{?_isa} = %{version}-%{release}
@@ -207,6 +213,7 @@ Requires: python2
 %patch0 -p1 -b .lit-search-path
 %patch1 -p1 -b .fstack-clash-protection
 %patch2 -p1 -b .vendor-gcc
+%patch3 -p1 -b .hmap-path-fix
 
 mv ../%{clang_tools_srcdir} tools/extra
 %endif
@@ -310,7 +317,7 @@ rm -Rvf %{buildroot}%{_pkgdocdir}
 rm -vf %{buildroot}%{_datadir}/clang/bash-autocomplete.sh
 
 # Add clang++-{version} sylink
-ln -s %{_bindir}/clang++ %{buildroot}%{_bindir}/clang++-%{maj_ver}.%{min_ver}
+ln -s %{_bindir}/clang++ %{buildroot}%{_bindir}/clang++-%{maj_ver}
 
 %endif
 
@@ -343,6 +350,7 @@ make %{?_smp_mflags} check || :
 %{clang_binaries}
 %{_bindir}/c-index-test
 %{_mandir}/man1/clang.1.gz
+%{_mandir}/man1/diagtool.1.gz
 %{_emacs_sitestartdir}/clang-format.el
 %{_datadir}/clang/clang-format.py*
 %{_datadir}/clang/clang-format-diff.py*
@@ -401,6 +409,9 @@ make %{?_smp_mflags} check || :
 
 %endif
 %changelog
+* Mon Aug 13 2018 Tom Stellard <tstellar@redhat.com> - 7.0.0-0.1.rc1
+- 7.0.0-rc1 Release
+
 * Mon Jul 23 2018 Tom Stellard <tstellar@redhat.com> - 6.0.1-3
 - Sync spec file with the clang6.0 package
 
