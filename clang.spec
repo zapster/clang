@@ -59,7 +59,7 @@
 
 Name:		%pkg_name
 Version:	%{maj_ver}.%{min_ver}.%{patch_ver}
-Release:	0.2.rc%{rc_ver}%{?dist}
+Release:	0.3.rc%{rc_ver}%{?dist}
 Summary:	A C language family front-end for LLVM
 
 License:	NCSA
@@ -77,6 +77,7 @@ Patch1:		0001-GCC-compatibility-Ignore-fstack-clash-protection.patch
 Patch2:		0001-Driver-Prefer-vendor-supplied-gcc-toolchain.patch
 # This was merged into the release_70 branch after 7.0.0-rc1
 Patch3:		0001-Merging-r338627.patch 
+Patch4:		0001-Fix-CLAMR-build-with-newer-libstdc.patch
 
 BuildRequires:  gcc
 BuildRequires:  gcc-c++
@@ -108,11 +109,6 @@ BuildRequires:  python3-lit
 # /usr/bin/python2, so we must have the python2 version of lit.
 # FIXME: We should find a way to not depend on python2-lit.
 BuildRequires:  python2-lit
-
-BuildRequires: zlib-devel
-BuildRequires: tcl
-BuildRequires: python2-virtualenv
-BuildRequires: libstdc++-static
 BuildRequires: python3-sphinx
 BuildRequires: libatomic
 
@@ -198,6 +194,21 @@ Requires: %{name}-libs%{?_isa} = %{version}-%{release}
 Requires: python2
 %description -n python2-clang
 %{summary}.
+
+%package -n llvm-test-suite
+Summary: C/C++ Compiler Test Suite
+Requires: cmake
+Requires: libstdc++-static
+Requires: python3-lit = 0.7.0
+# ABI-Testsuite requires python2-lit
+Requires: python2-lit = 0.7.0
+Requires: llvm
+Requires: tcl
+
+%description -n llvm-test-suite
+C/C++ Compiler Test Suite that is mantained as an LLVM sub-project.  This test
+suite can be run with any compiler, not just clang.
+
 %endif
 
 
@@ -208,6 +219,7 @@ Requires: python2
 %setup -T -q -b 1 -n %{clang_tools_srcdir}
 
 %setup -T -q -b 2 -n %{test_suite_srcdir}
+%patch4 -p1 -b .build-fix
 
 %setup -q -n %{clang_srcdir}
 %patch0 -p1 -b .lit-search-path
@@ -319,6 +331,10 @@ rm -vf %{buildroot}%{_datadir}/clang/bash-autocomplete.sh
 # Add clang++-{version} sylink
 ln -s %{_bindir}/clang++ %{buildroot}%{_bindir}/clang++-%{maj_ver}
 
+# Install test suite
+mkdir -p %{buildroot}%{_datadir}/llvm-test-suite/
+cp -R %{_builddir}/%{test_suite_srcdir}/* %{buildroot}%{_datadir}/llvm-test-suite
+
 %endif
 
 %check
@@ -333,14 +349,6 @@ PATH=%{_libdir}/llvm:$PATH make check-clang || \
 false
 %endif
 
-mkdir -p %{_builddir}/%{test_suite_srcdir}/_build
-cd %{_builddir}/%{test_suite_srcdir}/_build
-
-# FIXME: Using the cmake macro adds -Werror=format-security to the C/CXX flags,
-# which causes the test suite to fail to build.
-cmake .. -DCMAKE_C_COMPILER=%{buildroot}/usr/bin/clang \
-         -DCMAKE_CXX_COMPILER=%{buildroot}/usr/bin/clang++
-make %{?_smp_mflags} check || :
 %endif
 
 
@@ -407,8 +415,14 @@ make %{?_smp_mflags} check || :
 %files -n python2-clang
 %{python2_sitelib}/clang/
 
+%files -n llvm-test-suite
+%{_datadir}/llvm-test-suite/
+
 %endif
 %changelog
+* Fri Aug 17 2018 Tom Stellard <tstellar@redhat.com> - 7.0.0-0.3.rc1
+- Move llvm-test-suite into a sub-package
+
 * Wed Aug 15 2018 Tom Stellard <tstellar@redhat.com> - 7.0.0-0.2.rc1
 - Rebuild for f30
 
