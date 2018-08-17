@@ -55,11 +55,11 @@
 
 %global clang_srcdir cfe-%{version}%{?rc_ver:rc%{rc_ver}}.src
 %global clang_tools_srcdir clang-tools-extra-%{version}%{?rc_ver:rc%{rc_ver}}.src
-%global test_suite_srcdir test-suite-%{version}%{?rc_ver:rc%{rc_ver}}.src
+%global test_suite_srcdir test-suite-%{version}%{?rc_ver:rc%{rc_ver}}.src.fedora
 
 Name:		%pkg_name
 Version:	%{maj_ver}.%{min_ver}.%{patch_ver}
-Release:	0.3.rc%{rc_ver}%{?dist}
+Release:	0.4.rc%{rc_ver}%{?dist}
 Summary:	A C language family front-end for LLVM
 
 License:	NCSA
@@ -67,7 +67,14 @@ URL:		http://llvm.org
 Source0:	http://%{?rc_ver:pre}releases.llvm.org/%{version}/%{?rc_ver:rc%{rc_ver}}/%{clang_srcdir}.tar.xz
 %if !0%{?compat_build}
 Source1:	http://llvm.org/releases/%{version}/%{clang_tools_srcdir}.tar.xz
-Source2:	http://llvm.org/releases/%{version}/%{test_suite_srcdir}.tar.xz
+
+# The LLVM Test Suite contains progrms with "BAD" or unknown licenses which should
+# be removed.  Some of the unknown licenses may be OK, but until they are reviewed,
+# we will remove them.
+# Use the pkg_test_suite.sh script to generate the test-suite tarball:
+# wget http://llvm.org/releases/%%{version}/%%{test_suite_srcdir}.tar.xz
+# ./pkg_test_suite.sh %%{test_suite_srcdir}.tar.xz
+Source2:	%{test_suite_srcdir}.tar.xz
 %endif
 
 Source100:	clang-config.h
@@ -77,6 +84,10 @@ Patch1:		0001-GCC-compatibility-Ignore-fstack-clash-protection.patch
 Patch2:		0001-Driver-Prefer-vendor-supplied-gcc-toolchain.patch
 # This was merged into the release_70 branch after 7.0.0-rc1
 Patch3:		0001-Merging-r338627.patch 
+
+# Test suite Patches
+Patch100:	0001-Fix-CLAMR-build-with-newer-libstdc.patch
+Patch101:	0001-ABI-Testsuite-Force-the-old-c-11-ABI-in-mangling-tes.patch
 
 BuildRequires:  gcc
 BuildRequires:  gcc-c++
@@ -108,11 +119,7 @@ BuildRequires:  python3-lit
 # /usr/bin/python2, so we must have the python2 version of lit.
 # FIXME: We should find a way to not depend on python2-lit.
 BuildRequires:  python2-lit
-
-BuildRequires: zlib-devel
-BuildRequires: tcl
-BuildRequires: python2-virtualenv
-BuildRequires: libstdc++-static
+BuildRequires: python2-rpm-macros
 BuildRequires: python3-sphinx
 BuildRequires: libatomic
 
@@ -198,6 +205,22 @@ Requires: %{name}-libs%{?_isa} = %{version}-%{release}
 Requires: python2
 %description -n python2-clang
 %{summary}.
+
+%package -n llvm-test-suite
+Summary: C/C++ Compiler Test Suite
+License: NCSA, MIT, GPL, Python
+Requires: cmake
+Requires: libstdc++-static
+Requires: python3-lit = 0.7.0
+# ABI-Testsuite requires python2-lit
+Requires: python2-lit = 0.7.0
+Requires: llvm
+Requires: tcl
+
+%description -n llvm-test-suite
+C/C++ Compiler Test Suite that is mantained as an LLVM sub-project.  This test
+suite can be run with any compiler, not just clang.
+
 %endif
 
 
@@ -208,6 +231,8 @@ Requires: python2
 %setup -T -q -b 1 -n %{clang_tools_srcdir}
 
 %setup -T -q -b 2 -n %{test_suite_srcdir}
+%patch100 -p1 -b .build-fix
+%patch101 -p1 -b .old-abi-fix
 
 %setup -q -n %{clang_srcdir}
 %patch0 -p1 -b .lit-search-path
@@ -319,6 +344,10 @@ rm -vf %{buildroot}%{_datadir}/clang/bash-autocomplete.sh
 # Add clang++-{version} sylink
 ln -s %{_bindir}/clang++ %{buildroot}%{_bindir}/clang++-%{maj_ver}
 
+# Install test suite
+mkdir -p %{buildroot}%{_datadir}/llvm-test-suite/
+cp -R %{_builddir}/%{test_suite_srcdir}/* %{buildroot}%{_datadir}/llvm-test-suite
+
 %endif
 
 %check
@@ -333,14 +362,6 @@ PATH=%{_libdir}/llvm:$PATH make check-clang || \
 false
 %endif
 
-mkdir -p %{_builddir}/%{test_suite_srcdir}/_build
-cd %{_builddir}/%{test_suite_srcdir}/_build
-
-# FIXME: Using the cmake macro adds -Werror=format-security to the C/CXX flags,
-# which causes the test suite to fail to build.
-cmake .. -DCMAKE_C_COMPILER=%{buildroot}/usr/bin/clang \
-         -DCMAKE_CXX_COMPILER=%{buildroot}/usr/bin/clang++
-make %{?_smp_mflags} check || :
 %endif
 
 
@@ -407,8 +428,14 @@ make %{?_smp_mflags} check || :
 %files -n python2-clang
 %{python2_sitelib}/clang/
 
+%files -n llvm-test-suite
+%{_datadir}/llvm-test-suite/
+
 %endif
 %changelog
+* Fri Aug 17 2018 Tom Stellard <tstellar@redhat.com> - 7.0.0-0.4.rc1
+- Move llvm-test-suite into a sub-package
+
 * Fri Aug 17 2018 Tom Stellard <tstellar@redhat.com> - 7.0.0-0.3.rc1
 - Recommend the same version of compiler-rt
 
