@@ -59,7 +59,7 @@
 
 Name:		%pkg_name
 Version:	%{maj_ver}.%{min_ver}.%{patch_ver}
-Release:	0.2.rc%{rc_ver}%{?dist}
+Release:	0.3.rc%{rc_ver}%{?dist}
 Summary:	A C language family front-end for LLVM
 
 License:	NCSA
@@ -141,7 +141,7 @@ as libraries and designed to be loosely-coupled and extensible.
 
 %package libs
 Summary: Runtime library for clang
-Recommends: compiler-rt%{?_isa} >= %{version}
+Recommends: compiler-rt%{?_isa} = %{version}
 Recommends: libomp%{_isa} = %{version}
 
 %description libs
@@ -409,6 +409,9 @@ make %{?_smp_mflags} check || :
 
 %endif
 %changelog
+* Fri Aug 17 2018 Tom Stellard <tstellar@redhat.com> - 7.0.0-0.3.rc1
+- Recommend the same version of compiler-rt
+
 * Wed Aug 15 2018 Tom Stellard <tstellar@redhat.com> - 7.0.0-0.2.rc1
 - Rebuild for f30
 
