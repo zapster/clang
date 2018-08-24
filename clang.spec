@@ -38,7 +38,7 @@
 
 Name:		clang
 Version:	%{maj_ver}.%{min_ver}.%{patch_ver}
-Release:	1%{?dist}
+Release:	1unpatched
 Summary:	A C language family front-end for LLVM
 
 License:	NCSA
@@ -49,9 +49,9 @@ Source2:	http://llvm.org/releases/%{version}/%{test_suite_srcdir}.tar.xz
 
 Source100:	clang-config.h
 
-Patch0:		0001-lit.cfg-Add-hack-so-lit-can-find-not-and-FileCheck.patch
-Patch1:		0001-GCC-compatibility-Ignore-fstack-clash-protection.patch
-Patch2:		0001-Driver-Prefer-vendor-supplied-gcc-toolchain.patch
+#Patch0:		0001-lit.cfg-Add-hack-so-lit-can-find-not-and-FileCheck.patch
+#Patch1:		0001-GCC-compatibility-Ignore-fstack-clash-protection.patch
+#Patch2:		0001-Driver-Prefer-vendor-supplied-gcc-toolchain.patch
 
 BuildRequires:	cmake
 BuildRequires:	llvm-devel = %{version}
@@ -171,9 +171,6 @@ Requires: python2
 %setup -T -q -b 2 -n %{test_suite_srcdir}
 
 %setup -q -n %{clang_srcdir}
-%patch0 -p1 -b .lit-search-path
-%patch1 -p1 -b .fstack-clash-protection
-%patch2 -p1 -b .vendor-gcc
 
 mv ../%{clang_tools_srcdir} tools/extra
 
