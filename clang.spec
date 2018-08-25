@@ -38,7 +38,7 @@
 
 Name:		clang
 Version:	%{maj_ver}.%{min_ver}.%{patch_ver}
-Release:	1unpatched
+Release:	2unpatched
 Summary:	A C language family front-end for LLVM
 
 License:	NCSA
@@ -198,7 +198,7 @@ cd _build
 	-DCLANG_ENABLE_ARCMT:BOOL=ON \
 	-DCLANG_ENABLE_STATIC_ANALYZER:BOOL=ON \
 	-DCLANG_INCLUDE_DOCS:BOOL=ON \
-	-DCLANG_INCLUDE_TESTS:BOOL=ON \
+	-DCLANG_INCLUDE_TESTS:BOOL=OFF \
 	-DCLANG_PLUGIN_SUPPORT:BOOL=ON \
 	-DENABLE_LINKER_BUILD_ID:BOOL=ON \
 	-DLLVM_ENABLE_EH=ON \
@@ -254,26 +254,6 @@ rm -vf %{buildroot}%{_datadir}/clang/bash-autocomplete.sh
 
 # Add clang++-{version} sylink
 ln -s %{_bindir}/clang++ %{buildroot}%{_bindir}/clang++-%{maj_ver}.%{min_ver}
-
-%check
-# requires lit.py from LLVM utilities
-cd _build
-# FIXME: Fix failing ARM tests
-PATH=%{_libdir}/llvm:$PATH make check-clang || \
-%ifarch %{arm}
-:
-%else
-false
-%endif
-
-mkdir -p %{_builddir}/%{test_suite_srcdir}/_build
-cd %{_builddir}/%{test_suite_srcdir}/_build
-
-# FIXME: Using the cmake macro adds -Werror=format-security to the C/CXX flags,
-# which causes the test suite to fail to build.
-cmake .. -DCMAKE_C_COMPILER=%{buildroot}/usr/bin/clang \
-         -DCMAKE_CXX_COMPILER=%{buildroot}/usr/bin/clang++
-make %{?_smp_mflags} check || :
 
 
 %files
